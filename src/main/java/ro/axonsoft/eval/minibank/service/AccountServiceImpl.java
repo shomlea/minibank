@@ -36,8 +36,6 @@ public class AccountServiceImpl implements AccountService {
             return foundAccount.get().getBalance();
         }
 
-        // todo handle fetching id of system bank account
-
     }
 
     boolean isValidIban(String iban) {
