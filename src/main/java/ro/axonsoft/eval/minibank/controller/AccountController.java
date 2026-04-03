@@ -49,24 +49,30 @@ public class AccountController {
 
     @GetMapping("/{id}/balance")
     public ResponseEntity<BigDecimal> getBalance(@PathVariable Long id) {
-        return ResponseEntity.ok(accountService.getBalance(id));
+        Account account = accountService.findById(id)
+                .orElseThrow(() -> new java.util.NoSuchElementException("Account not found with ID " + id));
+
+        return ResponseEntity.ok(account.getBalance());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<AccountResponse> getAccount(@PathVariable Long id) {
-        return accountService.findById(id)
-                .map(account -> ResponseEntity.ok(AccountResponse.fromEntity(account)))
-                .orElse(ResponseEntity.notFound().build());
+        Account foundAccount = accountService.findById(id)
+                .orElseThrow(() -> new java.util.NoSuchElementException("Account not found with ID " + id));
+
+        return ResponseEntity.ok(AccountResponse.fromEntity(foundAccount));
     }
 
 
 
     @GetMapping("/{id}/transactions")
     public ResponseEntity<Page<TransactionResponse>> getTransactionHistory(@PathVariable Long id, Pageable pageable) {
-        return accountService.findById(id)
-                .map(account -> transactionService.findByAccountId(id, pageable)
-                        .map(TransactionResponse::fromEntity))
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        accountService.findById(id)
+                .orElseThrow(() -> new java.util.NoSuchElementException("Account not found with ID " + id));
+
+        Page<TransactionResponse> transactions = transactionService.findByAccountId(id, pageable)
+                .map(TransactionResponse::fromEntity);
+
+        return ResponseEntity.ok(transactions);
     }
 }
