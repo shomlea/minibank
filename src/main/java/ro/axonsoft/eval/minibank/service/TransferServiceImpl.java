@@ -62,14 +62,7 @@ public class TransferServiceImpl implements TransferService {
     public Transfer save(Transfer transfer, String key) {
         Optional<IdempotencyRecord> existing = idempotencyService.findByRequestKey(key);
 
-//        if (existing.isPresent()) {
-//            IdempotencyRecord idempotencyRecord = existing.get();
-//            return transferRepository.findById(idempotencyRecord.getResourceId())
-//                    .orElseThrow(() -> new IllegalStateException("Record exists but transfer is missing"));
-//
-//        }
-
-        if (existing.isPresent()) {
+        if (existing.isPresent() && existing.get().getResourceType().equals("transfer")) {
             IdempotencyRecord idempotencyRecord = existing.get();
             Transfer foundTransfer = transferRepository.findById(idempotencyRecord.getResourceId())
                     .orElseThrow(() -> new IllegalStateException("Record exists but transfer is missing"));
@@ -123,10 +116,8 @@ public class TransferServiceImpl implements TransferService {
 
 
             BigDecimal sourceToRonRate = exchangeRateConfig.getRates().get(sourceAccount.getCurrency().name());
-//            BigDecimal totalInRon = totalWithCurrent.multiply(sourceToRonRate);
 
             BigDecimal eurRate = exchangeRateConfig.getRates().get("EUR");
-//            BigDecimal totalInEur = totalInRon.divide(eurRate, 2, RoundingMode.HALF_EVEN);
 
             BigDecimal effectiveRate = sourceToRonRate.divide(eurRate, 6, RoundingMode.HALF_EVEN);
 
@@ -147,12 +138,7 @@ public class TransferServiceImpl implements TransferService {
 
             BigDecimal effectiveRate = sourceToRon.divide(targetToRon, 6, RoundingMode.HALF_EVEN);
 
-//            transfer.setExchangeRate(sourceToRon.divide(targetToRon, 2, RoundingMode.HALF_EVEN));
-
             transfer.setExchangeRate(effectiveRate);
-
-//            BigDecimal amountInRon = transfer.getAmount().multiply(sourceToRon);
-//            convertedAmount = amountInRon.divide(targetToRon, 2, RoundingMode.HALF_EVEN);
 
             convertedAmount = transfer.getAmount()
                     .multiply(effectiveRate)
@@ -187,11 +173,11 @@ public class TransferServiceImpl implements TransferService {
             firstTransaction.setBalanceAfter(sourceAccount.getBalance());
             if(targetAccount.getId() != 1L) {
                 firstTransaction.setCounterpartyIban(transfer.getTargetIban());
-                firstTransaction.setType(TransactionType.valueOf("TRANSFER_OUT"));
+                firstTransaction.setType(TransactionType.TRANSFER_OUT);
             }
             else {
                 firstTransaction.setCounterpartyIban(null);
-                firstTransaction.setType(TransactionType.valueOf("WITHDRAWAL"));
+                firstTransaction.setType(TransactionType.WITHDRAWAL);
             }
             firstTransaction.setTransferId(transfer.getId());
         }
@@ -207,11 +193,11 @@ public class TransferServiceImpl implements TransferService {
             secondTransaction.setBalanceAfter(targetAccount.getBalance());
             if(sourceAccount.getId() != 1L) {
                 secondTransaction.setCounterpartyIban(transfer.getSourceIban());
-                secondTransaction.setType(TransactionType.valueOf("TRANSFER_IN"));
+                secondTransaction.setType(TransactionType.TRANSFER_IN);
             }
             else {
                 secondTransaction.setCounterpartyIban(null);
-                secondTransaction.setType(TransactionType.valueOf("DEPOSIT"));
+                secondTransaction.setType(TransactionType.DEPOSIT);
             }
             secondTransaction.setTransferId(transfer.getId());
         }

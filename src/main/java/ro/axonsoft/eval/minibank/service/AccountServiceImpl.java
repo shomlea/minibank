@@ -69,7 +69,7 @@ public class AccountServiceImpl implements AccountService {
 
         Optional<IdempotencyRecord> existing = idempotencyService.findByRequestKey(key);
 
-        if (existing.isPresent()) {
+        if (existing.isPresent() && existing.get().getResourceType().equals("account")) {
             IdempotencyRecord idempotencyRecord = existing.get();
             Account foundAccount = accountRepository.findById(idempotencyRecord.getResourceId())
                     .orElseThrow(() -> new IllegalStateException("Record exists but account is missing"));
